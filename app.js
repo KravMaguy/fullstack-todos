@@ -38,7 +38,7 @@ const listSchema = {
 const List = mongoose.model("List", listSchema);
 
 app.get("/", function (req, res) {
-  console.log(Item, "item");
+  // console.log(Item, "item");
   Item.find({}, function (err, foundItems) {
     if (foundItems.length === 0) {
       Item.insertMany(defaultItems, function (err) {
@@ -53,13 +53,23 @@ app.get("/", function (req, res) {
 });
 
 app.post("/", function (req, res) {
-  console.log(req.body, "request boby body");
   const itemName = req.body.newItem;
+  const listName = req.body.list;
+  console.log(listName, 'the listName')
   const item = new Item({
     name: itemName,
   });
-  item.save();
-  res.redirect("/");
+  if (listName === "Main List") {
+    item.save();
+    res.redirect("/");
+  } else {
+    List.findOne({ name: listName }, function (err, foundList) {
+      console.log('foundList in the listnAme: ', listName)
+          foundList.items.push(item);
+          foundList.save();
+          res.redirect("/" + listName);
+    });
+  }
 });
 
 app.post("/delete", function (req, res) {
@@ -87,7 +97,7 @@ app.get("/:anyListName", function (req, res) {
         res.redirect("/" + anyListName);
       } else {
         console.log("exists");
-        console.log(returnedList, "the returnedList");
+        // console.log(returnedList, "the returnedList");
         res.render("list", {
           listTitle: returnedList.name,
           newListItems: returnedList.items,
