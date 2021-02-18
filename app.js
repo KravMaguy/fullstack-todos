@@ -1,6 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const _ = require("lodash");
+
 
 const app = express();
 
@@ -74,17 +76,29 @@ app.post("/", function (req, res) {
 
 app.post("/delete", function (req, res) {
   let itemId = req.body.checkbox;
-  Item.findByIdAndRemove(itemId, function (err, data) {
-    if (err) {
-      console.log(err, "the err msg reached");
-    }
-    console.log(data, "data successfully deleted");
-    res.redirect("/");
-  });
+  const listName = req.body.listName;
+
+  if (listName === "Main List") {
+    Item.findByIdAndRemove(itemId, function (err, data) {
+      if (err) {
+        console.log(err, "the err msg reached");
+      }
+      console.log(data, "data successfully deleted");
+      res.redirect("/");
+    });
+
+  } else {
+    List.findOneAndUpdate({name: listName}, {$pull: {items: {_id: itemId}}}, function(err, foundList){
+      if (!err){
+        res.redirect("/" + listName);
+      }
+    });
+  }
+
 });
 
 app.get("/:anyListName", function (req, res) {
-  const anyListName = req.params.anyListName;
+  const anyListName = _.capitalize(req.params.anyListName);
   List.findOne({ name: anyListName }, function (err, returnedList) {
     if (!err) {
       if (!returnedList) {
